@@ -4,12 +4,12 @@ import React, { createContext, useContext, useState, useEffect } from "react";
 export const AppContext = createContext();
 
 export const AppProvider = ({ children }) => {
-    
   // States
   const [loading, setLoading] = useState(false);
   const [oilsData, setOilsData] = useState([]);
   const [productsData, setProductsData] = useState([]);
   const [bottlesData, setBottlesData] = useState([]);
+  const [currentUnit, setCurrentUnit] = useState("g");
 
   // Auto-loading on mount
   useEffect(() => {
@@ -18,7 +18,12 @@ export const AppProvider = ({ children }) => {
     GetBottlesData();
   }, []);
 
-  // Getter Functions
+  // Toggle Unit
+  const ToggleUnit = () => {
+    setCurrentUnit((prev) => (prev === "g" ? "kg" : "g"));
+  };
+
+  // --- Getter Functions ---
   const GetOilsData = async () => {
     setLoading(true);
     try {
@@ -55,13 +60,13 @@ export const AppProvider = ({ children }) => {
     }
   };
 
-  // Setter/Updater Functions (replace if id exists)
+  // --- Updater Functions ---
   const UpdateOilsData = async (id, newItem) => {
     setLoading(true);
     try {
       let existingData = (await get("oils")) || [];
       existingData = existingData.filter((item) => item.id !== id);
-      const updatedData = [newItem, ...existingData];
+      const updatedData = [{ ...newItem, id }, ...existingData];
       await save("oils", updatedData);
       setOilsData(updatedData);
     } catch (e) {
@@ -76,11 +81,11 @@ export const AppProvider = ({ children }) => {
     try {
       let existingData = (await get("products")) || [];
       existingData = existingData.filter((item) => item.id !== id);
-      const updatedData = [newItem, ...existingData];
+      const updatedData = [{ ...newItem, id }, ...existingData];
       await save("products", updatedData);
       setProductsData(updatedData);
     } catch (e) {
-      console.error("Failed to update products:", e);
+      console.error("Failed to update product:", e);
     } finally {
       setLoading(false);
     }
@@ -91,7 +96,7 @@ export const AppProvider = ({ children }) => {
     try {
       let existingData = (await get("bottles")) || [];
       existingData = existingData.filter((item) => item.id !== id);
-      const updatedData = [newItem, ...existingData];
+      const updatedData = [{ ...newItem, id }, ...existingData];
       await save("bottles", updatedData);
       setBottlesData(updatedData);
     } catch (e) {
@@ -101,7 +106,7 @@ export const AppProvider = ({ children }) => {
     }
   };
 
-  // Adder Functions (always add new item)
+  // --- Adders ---
   const AddOil = async (newItem) => {
     setLoading(true);
     try {
@@ -119,8 +124,8 @@ export const AppProvider = ({ children }) => {
   const AddProduct = async (newItem) => {
     setLoading(true);
     try {
-      let existingData = (await get("products")) || [];
-      const updatedData = [newItem, ...existingData];
+      const existingData = (await get("products")) || [];
+      const updatedData = [...existingData, { ...newItem, id: Date.now() }];
       await save("products", updatedData);
       setProductsData(updatedData);
     } catch (e) {
@@ -144,7 +149,7 @@ export const AppProvider = ({ children }) => {
     }
   };
 
-  // Remover Functions (delete by id)
+  // --- Removers ---
   const RemoveOil = async (id) => {
     setLoading(true);
     try {
@@ -187,6 +192,59 @@ export const AppProvider = ({ children }) => {
     }
   };
 
+  // --- Delete All Data ---
+  const ClearAllOils = async () => {
+    setLoading(true);
+    try {
+      await save("oils", []);
+      setOilsData([]);
+    } catch (e) {
+      console.error("Failed to clear oils:", e);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const ClearAllProducts = async () => {
+    setLoading(true);
+    try {
+      await save("products", []);
+      setProductsData([]);
+    } catch (e) {
+      console.error("Failed to clear products:", e);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const ClearAllBottles = async () => {
+    setLoading(true);
+    try {
+      await save("bottles", []);
+      setBottlesData([]);
+    } catch (e) {
+      console.error("Failed to clear bottles:", e);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const ClearAllData = async () => {
+    setLoading(true);
+    try {
+      await save("oils", []);
+      await save("products", []);
+      await save("bottles", []);
+      setOilsData([]);
+      setProductsData([]);
+      setBottlesData([]);
+    } catch (e) {
+      console.error("Failed to clear everything:", e);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <AppContext.Provider
       value={{
@@ -216,6 +274,16 @@ export const AppProvider = ({ children }) => {
         RemoveOil,
         RemoveProduct,
         RemoveBottle,
+
+        // clear all
+        ClearAllOils,
+        ClearAllProducts,
+        ClearAllBottles,
+        ClearAllData,
+
+        // extra
+        currentUnit,
+        ToggleUnit,
       }}
     >
       {children}

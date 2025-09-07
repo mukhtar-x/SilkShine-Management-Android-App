@@ -42,11 +42,11 @@ export
         {
             key: 'size',
             label: 'Bottle Size',
-            type: 'text',
+            type: 'number',
             required: true,
             placeholder: 'e.g., 0.1kg, 0.2kg, 0.5kg',
             helper: 'Specify the bottle capacity',
-            minLength: 2,
+            minLength: 1,
             maxLength: 20
         },
         {

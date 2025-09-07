@@ -132,7 +132,7 @@
   "UpdateDetails": "تفصیلات اپ ڈیٹ کریں",
   "FillDetails": "تفصیلات درج کریں",
   "Enter": "درج کریں",
-  "enter_amount_kg": "رقم درج کریں (کلوگرام)",
+  "enter_amount": "رقم درج کریں",
   "bottle_size_kg": "بوتل کا سائز (کلوگرام)",
   "select_product": "مصنوع منتخب کریں",
   "Calculate": "حساب کریں",
@@ -141,6 +141,13 @@
   "oil_cost_bottle": "فی بوتل تیل کی لاگت",
   "packaging_cost_bottle": "فی بوتل پیکنگ لاگت",
   "final_cost_bottle": "فی بوتل کل قیمت",
-  "Reset" : "ری سیٹ"
-
+  "Reset": "ری سیٹ",
+  "CurrentUnit": "موجودہ یونٹ (پیمانہ)",
+  "gram": "گرام",
+  "kilogram": "کلوگرام",
+  "Language": "زبان",
+  "clear_all": "تمام ڈیٹا حذف کریں",
+  "confirm_delete": "حذف کی تصدیق",
+  "delete_all_message": "یہ تمام تیل، مصنوعات اور بوتلوں کا ڈیٹا مستقل طور پر ہٹا دے گا۔",
+  "yes_delete": "جی ہاں، حذف کریں"
 }

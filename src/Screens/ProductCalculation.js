@@ -1,3 +1,4 @@
+import React, { useState, useMemo, useEffect } from 'react';
 import {
   Alert,
   FlatList,
@@ -7,9 +8,7 @@ import {
   Text,
   TextInput,
   View,
-  ActivityIndicator
 } from 'react-native';
-import React, { useState } from 'react';
 import { heightToDp, widthToDp } from '../Theme/Dimensions';
 import { useLang } from '../Context/TranslationContext';
 import { Dropdown } from 'react-native-element-dropdown';
@@ -20,46 +19,120 @@ const ProductCalculation = () => {
   const [currentTab, setCurrentTab] = useState(0);
   const [selectedProductId, setSelectedProductId] = useState(null);
   const [selectedBottleId, setSelectedBottleId] = useState(null);
-  const [amountKg, setAmountKg] = useState('');
+  const [amount, setAmount] = useState('');
   const [productResult, setProductResult] = useState(null);
   const [bottleResult, setBottleResult] = useState(null);
 
-  const { productsData = [], oilsData = [], bottlesData = [], loading, setLoading } = useApp();
+  const {
+    productsData = [],
+    oilsData = [],
+    bottlesData = [],
+    loading,
+    setLoading,
+    currentUnit, // "g" or "kg"
+    GetOilsData,
+    GetProductsData,
+    GetBottlesData
+  } = useApp();
+
+  useEffect(() => {
+    GetOilsData();
+    GetProductsData();
+    GetBottlesData();
+  }, []);
+
+  // Ensure selectedBottleId is always valid
+  useEffect(() => {
+    if (selectedBottleId && !bottlesData.some(b => b.id === selectedBottleId)) {
+      setSelectedBottleId(null);
+    }
+  }, [bottlesData, selectedBottleId]);
+
+  // Ensure selectedProductId is always valid
+  useEffect(() => {
+    if (selectedProductId && !productsData.some(p => p.id === selectedProductId)) {
+      setSelectedProductId(null);
+    }
+  }, [productsData, selectedProductId]);
+
+
   const { t } = useLang();
 
-  const CalculationsTabs = [
-    { title: t('ProductCost') },
-    { title: t('BottleProduction') }
-  ];
+  // --- Tabs ---
+  const CalculationsTabs = useMemo(
+    () => [{ title: t('ProductCost') }, { title: t('BottleProduction') }],
+    [t]
+  );
 
-  const productOptions = productsData.map(item => ({
-    label: item.title,
-    value: item.id
-  }));
+  // --- Dropdown options ---
+  const productOptions = useMemo(
+    () =>
+      (Array.isArray(productsData) && productsData.length > 0
+        ? productsData
+        : [{ label: 'No Products', value: null }]
+      ).map(item => ({
+        label: item.title || item.label,
+        value: item.id || item.value,
+      })),
+    [productsData]
+  );
 
-  const bottleOptions = bottlesData.map(item => ({
-    label: item.size,
-    value: item.id
-  }));
+  const bottleOptions = useMemo(
+    () =>
+      (Array.isArray(bottlesData) && bottlesData.length > 0
+        ? bottlesData
+        : [{ label: 'No Bottles', value: null }]
+      ).map(item => ({
+        label: item.size
+          ? `${item.size} ${item.unit || 'kg'}`
+          : item.label,
+        value: item.id || item.value,
+      })),
+    [bottlesData]
+  );
 
-  const isValidNumber = (value) => !isNaN(parseFloat(value)) && parseFloat(value) > 0;
+  // --- Helpers ---
+  const isValidNumber = value =>
+    !isNaN(parseFloat(value)) && parseFloat(value) > 0;
 
-  const calculateProductDetails = (product, kgAmount) => {
-    if (!product || !Array.isArray(product.ingredients)) return { breakdown: [], totalQeemat: 0 };
+  // normalize input amount to kg internally
+  const normalizeAmount = () => {
+    const num = parseFloat(amount) || 0;
+    return currentUnit === 'g' ? num / 1000 : num;
+  };
 
+  // normalize bottle size to kg internally
+  const normalizeBottleSize = bottle => {
+    const size = parseFloat(bottle.size || 0);
+    const unit = bottle.unit || 'kg'; // default kg if missing
+    return unit === 'g' ? size / 1000 : size;
+  };
+
+  // --- Calculation functions ---
+  const calculateProductDetails = product => {
+    if (!product?.ingredients?.length)
+      return { breakdown: [], totalQeemat: 0 };
+
+    const normalizedAmountKg = normalizeAmount();
     let totalQeemat = 0;
-    const each = parseFloat(kgAmount) / 100;
+    const each = normalizedAmountKg / 100;
 
     const breakdown = product.ingredients.map(item => {
-      const portion = each * (item.percent || 0);
-      const oil = oilsData.find(o => o.id === item.oilReference) || {};
-      const qeemat = (oil.price || 0) * portion;
+      const portionKg = each * (item.percent || 0);
+      const oil =
+        oilsData.find(o => o.id === item.oilReference) || {};
+      const qeemat = (oil.price || 0) * portionKg;
       totalQeemat += qeemat;
+
+      // for display → convert portion back to current unit
+      const displayPortion =
+        currentUnit === 'g' ? portionKg * 1000 : portionKg;
+
       return {
         name: oil.title || 'Unknown',
-        portion,
+        portion: displayPortion,
         percent: item.percent || 0,
-        qeemat
+        qeemat,
       };
     });
 
@@ -67,58 +140,51 @@ const ProductCalculation = () => {
   };
 
   const handleCalculateProductDetails = () => {
-    if (!isValidNumber(amountKg)) {
-      Alert.alert('Error', 'Amount must be a positive number');
-      return;
-    }
-    if (!selectedProductId) {
-      Alert.alert('Error', 'Please select a product');
-      return;
-    }
+    if (!isValidNumber(amount))
+      return Alert.alert('Error', 'Amount must be a positive number');
+    if (!selectedProductId)
+      return Alert.alert('Error', 'Please select a product');
 
     setLoading(true);
     setTimeout(() => {
-      const product = productsData.find(p => p.id === selectedProductId);
-      const result = calculateProductDetails(product, amountKg);
-      setProductResult(result);
+      const product = productsData.find(
+        p => p.id === selectedProductId
+      );
+      setProductResult(calculateProductDetails(product));
       setLoading(false);
-    }, 1000);
+    }, 500);
   };
 
   const handleCalculateBottles = () => {
-    if (!isValidNumber(amountKg)) {
-      Alert.alert('Error', 'Amount must be a positive number');
-      return;
-    }
-    if (!selectedProductId || !selectedBottleId) {
-      Alert.alert('Error', 'Please select product and bottle');
-      return;
-    }
+    if (!isValidNumber(amount))
+      return Alert.alert('Error', 'Amount must be a positive number');
+    if (!selectedProductId || !selectedBottleId)
+      return Alert.alert(
+        'Error',
+        'Please select product and bottle'
+      );
 
     setLoading(true);
     setTimeout(() => {
-      const product = productsData.find(p => p.id === selectedProductId);
-      const bottle = bottlesData.find(b => b.id === selectedBottleId);
+      const product = productsData.find(
+        p => p.id === selectedProductId
+      );
+      const bottle = bottlesData.find(
+        b => b.id === selectedBottleId
+      );
+      if (!product || !bottle) return setLoading(false);
 
-      if (!product || !bottle) {
-        Alert.alert('Error', 'Invalid selection');
-        setLoading(false);
-        return;
-      }
+      const normalizedAmountKg = normalizeAmount();
+      const bottleSizeKg = normalizeBottleSize(bottle);
+      if (bottleSizeKg <= 0) return setLoading(false);
 
-      const totalKg = parseFloat(amountKg);
-      const bottleKg = parseFloat(bottle.size || 0);
+      const { totalQeemat } = calculateProductDetails(product);
+      const numOfBottles = Math.floor(
+        normalizedAmountKg / bottleSizeKg
+      );
+      const costPerKg = totalQeemat / normalizedAmountKg;
+      const oilQeematPerBottle = costPerKg * bottleSizeKg;
 
-      if (bottleKg <= 0) {
-        Alert.alert('Error', 'Bottle size invalid');
-        setLoading(false);
-        return;
-      }
-
-      const { totalQeemat } = calculateProductDetails(product, totalKg);
-      const numOfBottles = Math.floor(totalKg / bottleKg);
-      const costPerKg = totalQeemat / totalKg;
-      const oilQeematPerBottle = costPerKg * bottleKg;
       const packagingQeemat =
         Number(bottle.price || 0) +
         Number(bottle.stickerCost || 0) +
@@ -126,47 +192,56 @@ const ProductCalculation = () => {
         Number(bottle.labourCharges || 0) +
         Number(bottle.extraCharges || 0);
 
-      const finalBottleQeemat = oilQeematPerBottle + packagingQeemat;
-
       setBottleResult({
         numOfBottles,
         oilQeematPerBottle,
         packagingQeemat,
-        finalBottleQeemat
+        finalBottleQeemat:
+          oilQeematPerBottle + packagingQeemat,
       });
 
       setLoading(false);
-    }, 1000);
+    }, 500);
   };
 
   const handleReset = () => {
-    if (loading) return; // prevent reset during loading
+    if (loading) return;
     setSelectedProductId(null);
     setSelectedBottleId(null);
-    setAmountKg('');
+    setAmount('');
     setProductResult(null);
     setBottleResult(null);
   };
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: '#f5f5f5' }}>       
+    <SafeAreaView style={{ flex: 1, backgroundColor: '#f5f5f5' }}>
+      {/* Header */}
       <View style={styles.headerCard}>
         <Text style={styles.headerTitle}>{t('Calculations')}</Text>
         <Text>{t('CalculationsDescription')}</Text>
       </View>
 
+      {/* Tabs */}
       <View style={styles.tabsContainer}>
         {CalculationsTabs.map((item, index) => (
           <Pressable
             key={index}
             onPress={() => {
-              if (loading) return; // disable tab change while loading
+              if (loading) return;
               handleReset();
               setCurrentTab(index);
             }}
-            style={[styles.tab, index === currentTab && styles.activeTab]}
+            style={[
+              styles.tab,
+              index === currentTab && styles.activeTab,
+            ]}
           >
-            <Text style={[styles.tabText, index === currentTab && styles.activeTabText]}>
+            <Text
+              style={[
+                styles.tabText,
+                index === currentTab && styles.activeTabText,
+              ]}
+            >
               {item.title}
             </Text>
           </Pressable>
@@ -174,98 +249,148 @@ const ProductCalculation = () => {
       </View>
 
       <View style={{ paddingHorizontal: widthToDp(5), flex: 1 }}>
+        {/* Amount Input */}
         <TextInput
           style={styles.input}
-          placeholder={t('enter_amount_kg')}
+          placeholder={`${t('enter_amount')} (${currentUnit})`}
           keyboardType="numeric"
-          value={amountKg}
-          onChangeText={setAmountKg}
+          value={amount}
+          onChangeText={setAmount}
           editable={!loading}
         />
 
+        {/* Product Dropdown */}
         <Dropdown
           itemContainerStyle={styles.dropdownItem}
-          containerStyle={{ borderRadius: 10, minHeight: heightToDp(30) }}
+          containerStyle={{
+            borderRadius: 10,
+            minHeight: heightToDp(30),
+          }}
           style={styles.dropdown}
           data={productOptions}
           labelField="label"
           valueField="value"
           placeholder={t('select_product')}
           value={selectedProductId}
-          onChange={item => !loading && setSelectedProductId(item.value)}
+          onChange={item =>
+            item.value && !loading && setSelectedProductId(item.value)
+          }
+          disable={productOptions[0].value === null}
         />
 
+        {/* Bottle Dropdown */}
         {currentTab === 1 && (
           <Dropdown
             itemContainerStyle={styles.dropdownItem}
-            containerStyle={{ borderRadius: 10, minHeight: heightToDp(30) }}
+            containerStyle={{
+              borderRadius: 10,
+              minHeight: heightToDp(30),
+            }}
             style={styles.dropdown}
             data={bottleOptions}
             labelField="label"
             valueField="value"
             placeholder={t('bottle_size_kg')}
             value={selectedBottleId}
-            onChange={item => !loading && setSelectedBottleId(item.value)}
+            onChange={item =>
+              item.value &&
+              !loading &&
+              setSelectedBottleId(item.value)
+            }
+            disable={bottleOptions[0].value === null}
           />
         )}
 
-        <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 10 }}>
+        {/* Buttons */}
+        <View
+          style={{
+            flexDirection: 'row',
+            justifyContent: 'space-between',
+            marginTop: 10,
+          }}
+        >
           <CustomButton
             disabled={
               loading ||
               (currentTab === 0
-                ? !(selectedProductId && isValidNumber(amountKg))
-                : !(selectedProductId && selectedBottleId && isValidNumber(amountKg)))
+                ? !(selectedProductId && isValidNumber(amount))
+                : !(
+                  selectedProductId &&
+                  selectedBottleId &&
+                  isValidNumber(amount)
+                ))
             }
             title={t('Calculate')}
-            onPress={currentTab === 0 ? handleCalculateProductDetails : handleCalculateBottles}
+            onPress={
+              currentTab === 0
+                ? handleCalculateProductDetails
+                : handleCalculateBottles
+            }
           />
-          <CustomButton title={t('Reset')} onPress={handleReset} disabled={loading} />
+          <CustomButton
+            title={t('Reset')}
+            onPress={handleReset}
+            disabled={loading}
+          />
         </View>
 
+        {/* Product Results */}
+        {currentTab === 0 &&
+          productResult &&
+          !loading && (
+            <View style={styles.resultCard}>
+              <Text style={styles.cardTitle}>
+                {t('Total')}: Rs{' '}
+                {productResult.totalQeemat.toFixed(2)}
+              </Text>
+              <FlatList
+                data={productResult.breakdown}
+                keyExtractor={(item, i) => i.toString()}
+                renderItem={({ item }) => (
+                  <View style={styles.breakdownRow}>
+                    <Text>
+                      {item.name} ({item.percent}%):{' '}
+                      {item.portion.toFixed(2)} {currentUnit}
+                    </Text>
+                    <Text>Rs {item.qeemat.toFixed(2)}</Text>
+                  </View>
+                )}
+              />
+            </View>
+          )}
 
-
-        {currentTab === 0 && productResult && !loading && (
-          <View style={styles.resultCard}>
-            <Text style={styles.cardTitle}>
-              {t('Total')}: Rs {productResult.totalQeemat.toFixed(2)}
-            </Text>
-            <FlatList
-              data={productResult.breakdown}
-              keyExtractor={(item, i) => i.toString()}
-              renderItem={({ item }) => (
-                <View style={styles.breakdownRow}>
-                  <Text>
-                    {item.name} ({item.percent}%): {item.portion.toFixed(2)} Kg
-                  </Text>
-                  <Text>Rs {item.qeemat.toFixed(2)}</Text>
-                </View>
-              )}
-            />
-          </View>
-        )}
-
-        {currentTab === 1 && bottleResult && !loading && (
-          <View style={styles.resultCard}>
-            <Text style={styles.cardTitle}>{t('Bottle Production Details')}</Text>
-            <View style={styles.breakdownRow}>
-              <Text>{t('num_bottles')}</Text>
-              <Text>{bottleResult.numOfBottles}</Text>
+        {/* Bottle Results */}
+        {currentTab === 1 &&
+          bottleResult &&
+          !loading && (
+            <View style={styles.resultCard}>
+              <Text style={styles.cardTitle}>
+                {t('Bottle Production Details')}
+              </Text>
+              <View style={styles.breakdownRow}>
+                <Text>{t('num_bottles')}</Text>
+                <Text>{bottleResult.numOfBottles}</Text>
+              </View>
+              <View style={styles.breakdownRow}>
+                <Text>{t('oil_cost_bottle')}</Text>
+                <Text>
+                  Rs {bottleResult.oilQeematPerBottle.toFixed(2)}
+                </Text>
+              </View>
+              <View style={styles.breakdownRow}>
+                <Text>{t('packaging_cost_bottle')}</Text>
+                <Text>
+                  Rs {bottleResult.packagingQeemat.toFixed(2)}
+                </Text>
+              </View>
+              <View style={styles.breakdownRow}>
+                <Text>{t('final_cost_bottle')}</Text>
+                <Text>
+                  Rs {bottleResult.finalBottleQeemat.toFixed(2)}
+                </Text>
+              </View>
             </View>
-            <View style={styles.breakdownRow}>
-              <Text>{t('oil_cost_bottle')}</Text>
-              <Text>Rs {bottleResult.oilQeematPerBottle.toFixed(2)}</Text>
-            </View>
-            <View style={styles.breakdownRow}>
-              <Text>{t('packaging_cost_bottle')}</Text>
-              <Text>Rs {bottleResult.packagingQeemat.toFixed(2)}</Text>
-            </View>
-            <View style={styles.breakdownRow}>
-              <Text>{t('final_cost_bottle')}</Text>
-              <Text>Rs {bottleResult.finalBottleQeemat.toFixed(2)}</Text>
-            </View>
-          </View>
-        )}
+          )}
       </View>
     </SafeAreaView>
   );
@@ -273,6 +398,7 @@ const ProductCalculation = () => {
 
 export default ProductCalculation;
 
+// --- Styles ---
 const styles = StyleSheet.create({
   headerCard: {
     marginHorizontal: widthToDp(5),
@@ -282,20 +408,54 @@ const styles = StyleSheet.create({
     elevation: 10,
     backgroundColor: 'white',
     paddingVertical: heightToDp(5),
-    marginTop: heightToDp(15)
+    marginTop: heightToDp(15),
   },
   headerTitle: { color: 'black', fontWeight: 'bold', fontSize: 25 },
-  tabsContainer: { flexDirection: 'row', paddingHorizontal: widthToDp(5), justifyContent: 'space-evenly', paddingVertical: heightToDp(5) },
-  tab: { justifyContent: 'center', alignItems: 'center', borderRadius: 5, padding: 5, elevation: 5, width: widthToDp(40), height: heightToDp(10), backgroundColor: 'white' },
+  tabsContainer: {
+    flexDirection: 'row',
+    paddingHorizontal: widthToDp(5),
+    justifyContent: 'space-evenly',
+    paddingVertical: heightToDp(5),
+  },
+  tab: {
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: 5,
+    padding: 5,
+    elevation: 5,
+    width: widthToDp(40),
+    height: heightToDp(10),
+    backgroundColor: 'white',
+  },
   activeTab: { backgroundColor: '#3b82f6' },
   tabText: { color: 'black', fontWeight: '600', fontFamily: 'serif' },
   activeTabText: { color: 'white' },
-  sectionTitle: { fontWeight: 'bold', fontSize: 20, marginBottom: 10 },
-  input: { borderWidth: 1, borderColor: '#ccc', borderRadius: 10, padding: heightToDp(5), marginBottom: 10 },
-  dropdown: { borderWidth: 1, borderColor: '#ccc', borderRadius: 10, padding: heightToDp(5), marginBottom: 10 },
+  input: {
+    borderWidth: 1,
+    borderColor: '#ccc',
+    borderRadius: 10,
+    padding: heightToDp(5),
+    marginBottom: 10,
+  },
+  dropdown: {
+    borderWidth: 1,
+    borderColor: '#ccc',
+    borderRadius: 10,
+    padding: heightToDp(5),
+    marginBottom: 10,
+  },
   dropdownItem: { borderBottomWidth: 0.5, borderBottomColor: 'gray' },
-  resultCard: { backgroundColor: 'white', borderRadius: 10, padding: 15, marginTop: 15, elevation: 5 },
+  resultCard: {
+    backgroundColor: 'white',
+    borderRadius: 10,
+    padding: 15,
+    marginTop: 15,
+    elevation: 5,
+  },
   cardTitle: { fontWeight: 'bold', fontSize: 16, marginBottom: 10 },
-  breakdownRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 5 },
-
+  breakdownRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 5,
+  },
 });

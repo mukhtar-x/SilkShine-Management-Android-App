@@ -1,5 +1,5 @@
 import { Alert, FlatList, Modal, SafeAreaView, StyleSheet, Text, View } from 'react-native'
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { heightToDp, widthToDp } from '../Theme/Dimensions';
 import Header from '../Components/Header';
 import OilsCard from '../Components/OilsCard';
@@ -13,7 +13,10 @@ const ManageOils = () => {
     const [showFormModal, setShowFormModal] = useState(false);
     const [editingOil, setEditingOil] = useState(null);
 
-    const { oilsData = [], UpdateOilsData, RemoveOil, AddOil } = useApp();
+    const { oilsData = [], UpdateOilsData, RemoveOil, AddOil, GetOilsData } = useApp();
+    useEffect(() => {
+    GetOilsData();
+  }, []);
     const { t } = useLang();
 
     const handleAddOil = () => {

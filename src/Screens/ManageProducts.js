@@ -1,5 +1,5 @@
 import { FlatList, Modal, Pressable, SafeAreaView, StyleSheet, Text, View, Alert } from 'react-native'
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { heightToDp, widthToDp } from '../Theme/Dimensions';
 import Header from '../Components/Header';
 import SimpleCard from '../Components/SimpleCard';
@@ -13,7 +13,11 @@ const ManageProducts = () => {
     const [showFormModal, setShowFormModal] = useState(false);
     const [editingProduct, setEditingProduct] = useState(null);
 
-    const { productsData = [], UpdateProductsData, RemoveProduct, AddProduct, oilsData = [] } = useApp();
+    const { productsData = [], UpdateProductsData, RemoveProduct, AddProduct, oilsData = [], GetProductsData, GetOilsData } = useApp();
+    useEffect(() => {
+        GetOilsData();
+        GetProductsData();
+    }, []);
     const { t } = useLang();
 
     const handleAddProduct = () => {

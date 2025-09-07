@@ -1,5 +1,5 @@
 import { Alert, FlatList, Modal, SafeAreaView, StyleSheet, Text, View } from 'react-native';
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { heightToDp, widthToDp } from '../Theme/Dimensions';
 import Header from '../Components/Header';
 import SimpleCard from '../Components/SimpleCard';
@@ -12,8 +12,12 @@ import { useLang } from '../Context/TranslationContext';
 const ManageBottle = () => {
     const [showFormModal, setShowFormModal] = useState(false);
     const [editingBottle, setEditingBottle] = useState(null);
+    const { bottlesData = [], UpdateBottlesData, RemoveBottle, AddBottle, GetBottlesData } = useApp();
 
-    const { bottlesData = [], UpdateBottlesData, RemoveBottle, AddBottle } = useApp();
+    useEffect(() => {
+        GetBottlesData();
+    },[]);
+
     const { t } = useLang();
 
     const handleAddBottle = useCallback(() => {
@@ -46,6 +50,7 @@ const ManageBottle = () => {
             const newBottle = { id: Date.now(), ...sanitizedData };
             AddBottle(newBottle);
         }
+
 
         setShowFormModal(false);
         setEditingBottle(null);
