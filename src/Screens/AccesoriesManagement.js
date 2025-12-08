@@ -1,4 +1,5 @@
-import { Pressable, SafeAreaView, StyleSheet, Text, View, Alert } from 'react-native';
+import { Pressable, StyleSheet, Text, View, Alert } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import React from 'react';
 import { heightToDp, widthToDp } from '../Theme/Dimensions';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
@@ -26,7 +27,7 @@ const AccesoriesManagement = ({ navigation }) => {
   };
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: "#f8fafc", paddingBottom: heightToDp(3) }}>
+     <View style={{ flex: 1, backgroundColor: "#f8fafc", paddingBottom: heightToDp(30) }}>
       {/* Header Section */}
       <View style={styles.headerCard}>
         <Text style={styles.headerTitle}>{t("management")}</Text>
@@ -91,7 +92,7 @@ const AccesoriesManagement = ({ navigation }) => {
         </View>
 
       </View>
-    </SafeAreaView>
+     </View>
   )
 }
 

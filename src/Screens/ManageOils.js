@@ -1,4 +1,4 @@
-import { Alert, FlatList, Modal, SafeAreaView, StyleSheet, Text, View } from 'react-native'
+import { Alert, FlatList, Modal, StyleSheet, Text, View } from 'react-native'
 import React, { useEffect, useState } from 'react'
 import { heightToDp, widthToDp } from '../Theme/Dimensions';
 import Header from '../Components/Header';
@@ -57,7 +57,7 @@ const ManageOils = () => {
     };
 
     return (
-        <SafeAreaView style={styles.container}>
+         <View style={styles.container}>
             <Header title={t(`${ManagementTabs[0].key}`)} />
 
             <View style={styles.contentContainer}>
@@ -109,7 +109,7 @@ const ManageOils = () => {
                     isEdit={!!editingOil}
                 />
             </Modal>
-        </SafeAreaView>
+         </View>
     )
 }
 

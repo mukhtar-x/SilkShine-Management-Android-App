@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "SilkShine",
-    "slug": "SilkShine",
+    "slug": "silkshine",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.jpg",
@@ -17,19 +17,20 @@
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/icon.jpg",
+        "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
       "edgeToEdgeEnabled": true,
-      "package": "com.user1232.SilkShine"
+      "package": "com.user1232.silkshine"
     },
     "web": {
       "favicon": "./assets/favicon.png"
     },
     "extra": {
       "eas": {
-        "projectId": "4509cd7f-4df4-4a68-b5a3-7ac895af06f4"
+        "projectId": "618ac1b7-6a18-4f4e-8a47-aa9457832be9"
       }
-    }
+    },
+    "owner": "user1232"
   }
 }

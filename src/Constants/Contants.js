@@ -95,8 +95,8 @@ export
         },
     ];
 
-    export const ManagementTabs = [
-  { key: "manage_oils", route: "ManageOils" },
-  { key: "manage_products", route: "ManageProducts" },
-  { key: "manage_bottle", route: "ManageBottle" }
+export const ManagementTabs = [
+    { key: "manage_oils", route: "ManageOils" },
+    { key: "manage_products", route: "ManageProducts" },
+    { key: "manage_bottle", route: "ManageBottle" }
 ];

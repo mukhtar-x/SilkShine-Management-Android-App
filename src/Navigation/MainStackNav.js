@@ -72,7 +72,8 @@ const BottomTabs = () => {
         tabBarStyle: {
           height: heightToDp(18),
           paddingTop: heightToDp(2),
-          marginBottom: heightToDp(5),
+          marginBottom: heightToDp(10),
+          position : 'absolute',
           borderRadius: 50,
           marginHorizontal: widthToDp(5),
         }

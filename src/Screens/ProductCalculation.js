@@ -3,7 +3,7 @@ import {
   Alert,
   FlatList,
   Pressable,
-  SafeAreaView,
+  ScrollView,
   StyleSheet,
   Text,
   TextInput,
@@ -67,7 +67,7 @@ const ProductCalculation = () => {
   // --- Dropdown options ---
   const productOptions = useMemo(
     () =>
-      (Array.isArray(productsData) && productsData.length > 0
+      (Array.isArray(productsData) && productsData?.length > 0
         ? productsData
         : [{ label: 'No Products', value: null }]
       ).map(item => ({
@@ -129,7 +129,7 @@ const ProductCalculation = () => {
         currentUnit === 'g' ? portionKg * 1000 : portionKg;
 
       return {
-        name: oil.title || 'Unknown',
+        name: oil.title || 'Other',
         portion: displayPortion,
         percent: item.percent || 0,
         qeemat,
@@ -214,7 +214,7 @@ const ProductCalculation = () => {
   };
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: '#f5f5f5' }}>
+    <View style={{ flex: 1, backgroundColor: '#f5f5f5', paddingBottom: heightToDp(30) }}>
       {/* Header */}
       <View style={styles.headerCard}>
         <Text style={styles.headerTitle}>{t('Calculations')}</Text>
@@ -338,25 +338,21 @@ const ProductCalculation = () => {
         {currentTab === 0 &&
           productResult &&
           !loading && (
-            <View style={styles.resultCard}>
+            <ScrollView style={styles.resultCard}>
               <Text style={styles.cardTitle}>
                 {t('Total')}: Rs{' '}
                 {productResult.totalQeemat.toFixed(2)}
               </Text>
-              <FlatList
-                data={productResult.breakdown}
-                keyExtractor={(item, i) => i.toString()}
-                renderItem={({ item }) => (
-                  <View style={styles.breakdownRow}>
-                    <Text>
-                      {item.name} ({item.percent}%):{' '}
-                      {item.portion.toFixed(2)} {currentUnit}
-                    </Text>
-                    <Text>Rs {item.qeemat.toFixed(2)}</Text>
-                  </View>
-                )}
-              />
-            </View>
+              {productResult?.breakdown?.filter(key => key.name?.toLowerCase() != "other").map((item, index) => (
+                <View key={index} style={styles.breakdownRow}>
+                  <Text>
+                    {item.name} ({item.percent}%):{' '}
+                    {item.portion.toFixed(2)} {currentUnit}
+                  </Text>
+                  <Text>Rs {item.qeemat.toFixed(2)}</Text>
+                </View>
+              ))}
+            </ScrollView>
           )}
 
         {/* Bottle Results */}
@@ -392,7 +388,7 @@ const ProductCalculation = () => {
             </View>
           )}
       </View>
-    </SafeAreaView>
+    </View>
   );
 };
 
@@ -446,13 +442,15 @@ const styles = StyleSheet.create({
   },
   dropdownItem: { borderBottomWidth: 0.5, borderBottomColor: 'gray' },
   resultCard: {
+    flex: 1,
     backgroundColor: 'white',
     borderRadius: 10,
-    padding: 15,
-    marginTop: 15,
+    paddingHorizontal: 15,
+    paddingBottom: 15,
+    marginVertical: 15,
     elevation: 5,
   },
-  cardTitle: { fontWeight: 'bold', fontSize: 16, marginBottom: 10 },
+  cardTitle: { paddingTop: 10, fontWeight: 'bold', fontSize: 16, marginBottom: 10 },
   breakdownRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',

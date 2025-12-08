@@ -132,12 +132,14 @@ const DynamicForm = ({
             percent: parseFloat(percent)
           }));
 
-        // Always push "Other" as remainder
-        ingredients.push({
-          oilReference: -1,
-          percent: getOtherPercentage(),
-          oilName: "Other"
-        });
+        const otherPercent = getOtherPercentage();
+        if (otherPercent > 0) {
+          ingredients.push({
+            oilReference: -1,
+            percent: otherPercent,
+            oilName: "Other"
+          })
+        }
 
         processedData.ingredients = ingredients;
       }
@@ -287,8 +289,8 @@ const styles = StyleSheet.create({
   oilPrice: { fontSize: 14, color: "#16a34a", marginTop: 2, fontWeight: "500" },
   percentageInput: { flexDirection: 'row', alignItems: 'center' },
   percentInputContainer: { marginBottom: 0, width: widthToDp(20) },
-  percentInput: { textAlign: 'center', height: heightToDp(12), marginBottom: 0 },
+  percentInput: { textAlign: 'center', minHeight: heightToDp(12), marginBottom: 0 },
   percentSymbol: { fontSize: 16, fontWeight: "600", color: "#6b7280", marginLeft: 8 },
-  actionContainer: { flexDirection: "row", paddingHorizontal: widthToDp(6), paddingVertical: heightToDp(3), gap: 12, backgroundColor: "white", borderTopWidth: 1, borderTopColor: "#e2e8f0", elevation: 8 },
+  actionContainer: { flexDirection: "row", paddingHorizontal: widthToDp(6), paddingTop: heightToDp(3), paddingBottom: heightToDp(10), gap: 12, backgroundColor: "white", borderTopWidth: 1, borderTopColor: "#e2e8f0", elevation: 8 },
   actionButton: { flex: 1 }
 });

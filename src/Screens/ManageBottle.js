@@ -1,5 +1,6 @@
-import { Alert, FlatList, Modal, SafeAreaView, StyleSheet, Text, View } from 'react-native';
+import { Alert, FlatList, Modal, StyleSheet, Text, View } from 'react-native';
 import React, { useState, useCallback, useEffect } from 'react';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { heightToDp, widthToDp } from '../Theme/Dimensions';
 import Header from '../Components/Header';
 import SimpleCard from '../Components/SimpleCard';
@@ -75,7 +76,7 @@ const ManageBottle = () => {
     }, [RemoveBottle, t]);
 
     return (
-        <SafeAreaView style={styles.container}>
+         <View style={styles.container}>
             <Header title={t(`${ManagementTabs[2]?.key || 'Bottles'}`)} />
 
             <View style={styles.contentContainer}>
@@ -126,7 +127,7 @@ const ManageBottle = () => {
                     isEdit={!!editingBottle}
                 />
             </Modal>
-        </SafeAreaView>
+         </View>
     );
 };
 

@@ -1,5 +1,7 @@
-import { FlatList, Modal, Pressable, SafeAreaView, StyleSheet, Text, View, Alert } from 'react-native'
+import { FlatList, Modal, StyleSheet, Text, View, Alert } from 'react-native'
 import React, { useEffect, useState } from 'react'
+import { SafeAreaView } from 'react-native-safe-area-context';
+
 import { heightToDp, widthToDp } from '../Theme/Dimensions';
 import Header from '../Components/Header';
 import SimpleCard from '../Components/SimpleCard';
@@ -58,7 +60,7 @@ const ManageProducts = () => {
     };
 
     return (
-        <SafeAreaView style={styles.container}>
+         <View style={styles.container}>
             <Header title={t(`${ManagementTabs[1].key}`)} />
 
             <View style={styles.contentContainer}>
@@ -113,7 +115,7 @@ const ManageProducts = () => {
                     autoCompletePercentage={true}
                 />
             </Modal>
-        </SafeAreaView>
+         </View>
     )
 }
 
